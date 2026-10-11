@@ -5,6 +5,7 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
+import { isNonEmptyString } from '@sniptt/guards';
 import { isAxiosError } from 'axios';
 import bytes from 'bytes';
 import { type Manifest } from 'twenty-shared/application';
@@ -90,9 +91,14 @@ export class ApplicationPackageFetcherService implements OnModuleInit {
     }
 
     const manifestUniversalIdentifier =
-      resolvedPackage.manifest.application.universalIdentifier;
+      resolvedPackage.manifest.application?.universalIdentifier;
 
-    if (manifestUniversalIdentifier !== appRegistration.universalIdentifier) {
+    if (
+      !isNonEmptyString(manifestUniversalIdentifier) ||
+      !isNonEmptyString(appRegistration.universalIdentifier) ||
+      manifestUniversalIdentifier.toLowerCase() !==
+        appRegistration.universalIdentifier.toLowerCase()
+    ) {
       await this.cleanupExtractedDir(resolvedPackage.cleanupDir);
 
       throw new ApplicationException(
@@ -100,6 +106,9 @@ export class ApplicationPackageFetcherService implements OnModuleInit {
         ApplicationExceptionCode.PACKAGE_RESOLUTION_FAILED,
       );
     }
+
+    resolvedPackage.manifest.application.universalIdentifier =
+      manifestUniversalIdentifier.toLowerCase();
 
     return resolvedPackage;
   }

@@ -1,6 +1,7 @@
 import { isPlainObject } from 'twenty-shared/utils';
 
 import { isApplicationNotFoundError } from '@/app/is-application-not-found-error';
+import { isSameUniversalIdentifier } from '@/app/is-same-universal-identifier';
 import { parseAppPlan } from '@/app/deployment/parse-app-plan';
 import { type ToolingBuild } from '@/app/types/tooling-result.type';
 import { CliError } from '@/output/cli-error';
@@ -21,8 +22,10 @@ export const fetchAppPlan = async ({
   if (
     build.manifestFormat !== 'twenty-application' ||
     !isPlainObject(build.manifest.application) ||
-    build.manifest.application.universalIdentifier !==
-      build.application.universalIdentifier
+    !isSameUniversalIdentifier({
+      value: build.manifest.application.universalIdentifier,
+      universalIdentifier: build.application.universalIdentifier,
+    })
   ) {
     throw new CliError({
       code: 'TOOLING_UNSUPPORTED',

@@ -5,6 +5,8 @@ export const isSameUniversalIdentifier = ({
   universalIdentifier,
 }: {
   value: unknown;
-  universalIdentifier: string;
+  universalIdentifier: unknown;
 }) =>
-  isString(value) && value.toLowerCase() === universalIdentifier.toLowerCase();
+  isString(value) &&
+  isString(universalIdentifier) &&
+  value.toLowerCase() === universalIdentifier.toLowerCase();
