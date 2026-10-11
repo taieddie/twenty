@@ -4,6 +4,7 @@ import { useUpdateMetadataStoreDraft } from '@/metadata-store/hooks/useUpdateMet
 import { type MetadataEntityKey } from '@/metadata-store/states/metadataStoreState';
 import { type MetadataEntityTypeMap } from '@/metadata-store/types/MetadataEntityTypeMap';
 import { mapAllMetadataNameToEntityKey } from '@/metadata-store/utils/mapAllMetadataNameToEntityKey';
+import { normalizeMetadataEntityFromSSE } from '@/metadata-store/utils/normalizeMetadataEntityFromSSE';
 import { isDefined } from 'twenty-shared/utils';
 
 type AnyMetadataEntity = MetadataEntityTypeMap[MetadataEntityKey];
@@ -26,23 +27,27 @@ export const MetadataStoreSSEEffect = () => {
 
       switch (eventDetail.operation.type) {
         case 'create': {
+          const normalizedRecord = normalizeMetadataEntityFromSSE(
+            entityKey,
+            eventDetail.operation.createdRecord,
+          );
+
           addToDraft({
             key: entityKey,
-            items: [
-              eventDetail.operation
-                .createdRecord as unknown as AnyMetadataEntity,
-            ],
+            items: [normalizedRecord as unknown as AnyMetadataEntity],
             collectionHash,
           });
           break;
         }
         case 'update': {
+          const normalizedRecord = normalizeMetadataEntityFromSSE(
+            entityKey,
+            eventDetail.operation.updatedRecord,
+          );
+
           addToDraft({
             key: entityKey,
-            items: [
-              eventDetail.operation
-                .updatedRecord as unknown as AnyMetadataEntity,
-            ],
+            items: [normalizedRecord as unknown as AnyMetadataEntity],
             collectionHash,
           });
           break;
