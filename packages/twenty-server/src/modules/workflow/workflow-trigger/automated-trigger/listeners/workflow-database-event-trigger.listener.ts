@@ -64,7 +64,7 @@ export const buildWorkflowDatabaseEventTriggerPayload = <
   eventPayload: TEvent,
 ): TEvent & { object: object } => {
   const cleanedPayload = omitInheritedReadabilityChildRecords(eventPayload);
-  const properties = eventPayload.properties as
+  const properties = cleanedPayload.properties as
     | { after?: object; before?: object }
     | undefined;
   const recordObject = {
