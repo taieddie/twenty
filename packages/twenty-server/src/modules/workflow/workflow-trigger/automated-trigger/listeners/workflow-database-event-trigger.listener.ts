@@ -58,6 +58,26 @@ type TriggerEvaluationArgs = {
   action: DatabaseEventAction;
 };
 
+export const buildWorkflowDatabaseEventTriggerPayload = <
+  TEvent extends ObjectRecordEvent,
+>(
+  eventPayload: TEvent,
+): TEvent & { object: object } => {
+  const cleanedPayload = omitInheritedReadabilityChildRecords(eventPayload);
+  const properties = eventPayload.properties as
+    | { after?: object; before?: object }
+    | undefined;
+  const recordObject = {
+    ...(properties?.after ?? properties?.before ?? {}),
+    id: eventPayload.recordId,
+  };
+
+  return {
+    ...cleanedPayload,
+    object: recordObject,
+  };
+};
+
 @Injectable()
 export class WorkflowDatabaseEventTriggerListener {
   private readonly logger = new Logger(
@@ -382,7 +402,7 @@ export class WorkflowDatabaseEventTriggerListener {
               workflowId:
                 eventListener.legacyWorkflowId ?? eventListener.workflowId,
               ...buildCoreDispatchIds(eventListener),
-              payload: omitInheritedReadabilityChildRecords(eventPayload),
+              payload: buildWorkflowDatabaseEventTriggerPayload(eventPayload),
             },
             { retryLimit: 3 },
           );

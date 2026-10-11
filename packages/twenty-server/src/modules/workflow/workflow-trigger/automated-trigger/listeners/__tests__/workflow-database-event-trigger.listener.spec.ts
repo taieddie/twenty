@@ -1,7 +1,10 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { TWENTY_STANDARD_APPLICATION_UNIVERSAL_IDENTIFIER } from 'twenty-shared/application';
-import type { ObjectRecordUpdateEvent } from 'twenty-shared/database-events';
+import type {
+  ObjectRecordEvent,
+  ObjectRecordUpdateEvent,
+} from 'twenty-shared/database-events';
 import {
   MetadataReadability,
   RecordShareAccessLevel,
@@ -15,11 +18,14 @@ import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object
 import { createEmptyFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/constant/create-empty-flat-entity-maps.constant';
 import { RecordAccessPolicyService } from 'src/engine/core-modules/record-share/services/record-access-policy.service';
 import { RecordShareStorageService } from 'src/engine/core-modules/record-share/services/record-share-storage.service';
-import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
 import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
+import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
 import { type WorkspaceEventBatch } from 'src/engine/workspace-event-emitter/types/workspace-event-batch.type';
 import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
-import { WorkflowDatabaseEventTriggerListener } from 'src/modules/workflow/workflow-trigger/automated-trigger/listeners/workflow-database-event-trigger.listener';
+import {
+  buildWorkflowDatabaseEventTriggerPayload,
+  WorkflowDatabaseEventTriggerListener,
+} from 'src/modules/workflow/workflow-trigger/automated-trigger/listeners/workflow-database-event-trigger.listener';
 import { WorkflowTriggerJob } from 'src/modules/workflow/workflow-trigger/jobs/workflow-trigger.job';
 
 describe('WorkflowDatabaseEventTriggerListener', () => {
@@ -196,7 +202,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: mockPayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            mockPayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -283,7 +291,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: createPayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            createPayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -322,7 +332,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: deletePayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            deletePayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -358,10 +370,7 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
       expect(messageQueueService.add).toHaveBeenCalledWith(
         WorkflowTriggerJob.name,
         expect.objectContaining({
-          payload: {
-            ...capturedEvent,
-            properties: { before: { field1: 'old', field2: 'old' } },
-          },
+          payload: buildWorkflowDatabaseEventTriggerPayload(capturedEvent),
         }),
         { retryLimit: 3 },
       );
@@ -400,7 +409,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: destroyPayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            destroyPayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -489,7 +500,11 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
       expect(messageQueueService.add).toHaveBeenCalledTimes(1);
       expect(messageQueueService.add).toHaveBeenCalledWith(
         WorkflowTriggerJob.name,
-        expect.objectContaining({ payload: privatePayload.events[1] }),
+        expect.objectContaining({
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            privatePayload.events[1],
+          ),
+        }),
         { retryLimit: 3 },
       );
     });
@@ -584,7 +599,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: batchPayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            batchPayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -596,7 +613,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: batchPayload.events[1],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            batchPayload.events[1],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -636,7 +655,9 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
           workflowId,
           coreWorkflowVersionId: `core-version-${workflowId}`,
           workspaceWorkflowVersionId: `workspace-version-${workflowId}`,
-          payload: positionOnlyPayload.events[0],
+          payload: buildWorkflowDatabaseEventTriggerPayload(
+            positionOnlyPayload.events[0],
+          ),
         },
         { retryLimit: 3 },
       );
@@ -700,6 +721,132 @@ describe('WorkflowDatabaseEventTriggerListener', () => {
       await listener.handleObjectRecordUpdateEvent(positionOnlyPayload);
 
       expect(messageQueueService.add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('buildWorkflowDatabaseEventTriggerPayload', () => {
+    it('should attach object record populated from properties.after for create and update events', () => {
+      const event: ObjectRecordUpdateEvent = {
+        recordId: 'record-123',
+        userId: 'user-456',
+        workspaceMemberId: 'member-789',
+        properties: {
+          updatedFields: ['name', 'stage'],
+          diff: {},
+          before: { id: 'record-123', name: 'Before Name', stage: 'NEW' },
+          after: { id: 'record-123', name: 'After Name', stage: 'QUALIFIED' },
+        },
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(event);
+
+      expect(result.object).toEqual({
+        id: 'record-123',
+        name: 'After Name',
+        stage: 'QUALIFIED',
+      });
+      expect(result.recordId).toBe('record-123');
+      expect(result.properties.after).toEqual(event.properties.after);
+      expect(result.properties.before).toEqual(event.properties.before);
+      expect(result.properties.updatedFields).toEqual(['name', 'stage']);
+    });
+
+    it('should fallback to properties.before for delete and destroy events', () => {
+      const event = {
+        recordId: 'record-delete-1',
+        properties: {
+          before: { id: 'record-delete-1', name: 'To Be Deleted' },
+        },
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(
+        event as unknown as ObjectRecordEvent,
+      );
+
+      expect(result.object).toEqual({
+        id: 'record-delete-1',
+        name: 'To Be Deleted',
+      });
+      expect(result.recordId).toBe('record-delete-1');
+    });
+
+    it('should ensure record id is present on object even if properties.after does not include id', () => {
+      const event = {
+        recordId: 'record-custom-id',
+        properties: {
+          after: { name: 'New Record Without Explicit ID' },
+        },
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(
+        event as unknown as ObjectRecordEvent,
+      );
+
+      expect(result.object).toEqual({
+        id: 'record-custom-id',
+        name: 'New Record Without Explicit ID',
+      });
+    });
+
+    it('should ensure record id is not overwritten even if properties.after has an undefined id', () => {
+      const event = {
+        recordId: 'record-custom-id',
+        properties: {
+          after: {
+            id: undefined,
+            name: 'Record With Undefined ID in Properties',
+          },
+        },
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(
+        event as unknown as ObjectRecordEvent,
+      );
+
+      expect(result.object).toEqual({
+        id: 'record-custom-id',
+        name: 'Record With Undefined ID in Properties',
+      });
+    });
+
+    it('should fallback to object with recordId when properties is empty or missing after and before', () => {
+      const event = {
+        recordId: 'record-minimal',
+        properties: {},
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(
+        event as unknown as ObjectRecordEvent,
+      );
+
+      expect(result.object).toEqual({
+        id: 'record-minimal',
+      });
+    });
+
+    it('should strip inheritedReadabilityChildRecords from properties while preserving object payload', () => {
+      const event = {
+        recordId: 'record-with-children',
+        properties: {
+          after: { id: 'record-with-children', name: 'Parent Record' },
+          inheritedReadabilityChildRecords: {
+            noteTarget: [{ id: 'child-1' }],
+          },
+        },
+      };
+
+      const result = buildWorkflowDatabaseEventTriggerPayload(
+        event as unknown as ObjectRecordEvent,
+      );
+
+      expect(result.object).toEqual({
+        id: 'record-with-children',
+        name: 'Parent Record',
+      });
+      expect(
+        (result.properties as Record<string, unknown>)
+          .inheritedReadabilityChildRecords,
+      ).toBeUndefined();
     });
   });
 });
