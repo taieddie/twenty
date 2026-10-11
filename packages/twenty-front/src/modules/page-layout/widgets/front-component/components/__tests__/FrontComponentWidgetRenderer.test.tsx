@@ -86,4 +86,42 @@ describe('FrontComponentWidgetRenderer', () => {
       'front-component-id:no object:no records',
     );
   });
+
+  it('renders front component when configuration has configurationType without __typename', async () => {
+    const widgetWithoutTypename = {
+      id: 'widget-id',
+      configuration: {
+        configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+        frontComponentId: 'front-component-id',
+      },
+    } as PageLayoutWidget;
+
+    render(
+      <PageLayoutEditModeProviderContext value={{ isInEditMode: false }}>
+        <PageLayoutContentProvider
+          value={{
+            tabId: 'tab-id',
+            layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+            presentation: 'stack',
+          }}
+        >
+          <LayoutRenderingProvider
+            value={{
+              targetRecordIdentifier: {
+                id: 'record-id',
+                targetObjectNameSingular: 'company',
+              },
+              layoutType: PageLayoutType.RECORD_PAGE,
+            }}
+          >
+            <FrontComponentWidgetRenderer widget={widgetWithoutTypename} />
+          </LayoutRenderingProvider>
+        </PageLayoutContentProvider>
+      </PageLayoutEditModeProviderContext>,
+    );
+
+    expect(await screen.findByTestId('front-component')).toHaveTextContent(
+      'front-component-id:company:record-id',
+    );
+  });
 });

@@ -1,4 +1,5 @@
 import { isWidgetConfigurationOfType } from '@/side-panel/pages/page-layout/utils/isWidgetConfigurationOfType';
+import { WidgetConfigurationType } from '~/generated-metadata/graphql';
 import {
   ALL_CHART_CONFIGURATIONS,
   TEST_BAR_CHART_CONFIGURATION,
@@ -71,5 +72,85 @@ describe('isWidgetConfigurationOfType', () => {
         true,
       );
     });
+  });
+
+  it('identifies configuration when __typename is absent and configurationType matches', () => {
+    const frontComponentConfigWithoutTypename = {
+      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+      frontComponentId: 'front-comp-123',
+    };
+
+    expect(
+      isWidgetConfigurationOfType(
+        frontComponentConfigWithoutTypename,
+        'FrontComponentConfiguration',
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false when __typename is absent and configurationType does not match', () => {
+    const frontComponentConfigWithoutTypename = {
+      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+      frontComponentId: 'front-comp-123',
+    };
+
+    expect(
+      isWidgetConfigurationOfType(
+        frontComponentConfigWithoutTypename,
+        'BarChartConfiguration',
+      ),
+    ).toBe(false);
+  });
+
+  it('returns false when configuration has neither __typename nor configurationType', () => {
+    const emptyConfig = {};
+
+    expect(
+      isWidgetConfigurationOfType(
+        emptyConfig as any,
+        'FrontComponentConfiguration',
+      ),
+    ).toBe(false);
+  });
+
+  it('returns false when __typename does not match even if configurationType is absent', () => {
+    const mismatchedConfig = {
+      __typename: 'BarChartConfiguration',
+    };
+
+    expect(
+      isWidgetConfigurationOfType(
+        mismatchedConfig as any,
+        'FrontComponentConfiguration',
+      ),
+    ).toBe(false);
+  });
+
+  it('returns false safely when configuration is a primitive value', () => {
+    expect(
+      isWidgetConfigurationOfType(
+        'corrupt-string' as any,
+        'FrontComponentConfiguration',
+      ),
+    ).toBe(false);
+    expect(
+      isWidgetConfigurationOfType(12345 as any, 'FrontComponentConfiguration'),
+    ).toBe(false);
+    expect(
+      isWidgetConfigurationOfType(true as any, 'FrontComponentConfiguration'),
+    ).toBe(false);
+  });
+
+  it('returns false when typename is unknown or invalid', () => {
+    const config = {
+      configurationType: WidgetConfigurationType.FRONT_COMPONENT,
+    };
+
+    expect(
+      isWidgetConfigurationOfType(
+        config as any,
+        'NonExistentConfiguration' as any,
+      ),
+    ).toBe(false);
   });
 });

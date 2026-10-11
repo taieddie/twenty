@@ -1,3 +1,6 @@
+import { isNonEmptyString } from '@sniptt/guards';
+import { isDefined } from 'twenty-shared/utils';
+
 import { type FieldConfiguration } from '@/page-layout/types/FieldConfiguration';
 import {
   type AggregateChartConfiguration,
@@ -26,7 +29,7 @@ import {
   type TimelineConfiguration,
   type ViewConfiguration,
   type WidgetConfiguration,
-  type WidgetConfigurationType,
+  WidgetConfigurationType,
   type WorkflowConfiguration,
   type WorkflowRunConfiguration,
   type WorkflowVersionConfiguration,
@@ -163,6 +166,45 @@ type WidgetConfigurationTypenameMap = {
 
 type WidgetConfigurationTypename = keyof WidgetConfigurationTypenameMap;
 
+export const WIDGET_TYPENAME_TO_CONFIGURATION_TYPE_MAP: Record<
+  WidgetConfigurationTypename,
+  WidgetConfigurationType
+> = {
+  AggregateChartConfiguration: WidgetConfigurationType.AGGREGATE_CHART,
+  BarChartConfiguration: WidgetConfigurationType.BAR_CHART,
+  CalendarConfiguration: WidgetConfigurationType.CALENDAR,
+  FrontComponentConfiguration: WidgetConfigurationType.FRONT_COMPONENT,
+  EmailThreadConfiguration: WidgetConfigurationType.EMAIL_THREAD,
+  CallRecordingSummaryConfiguration:
+    WidgetConfigurationType.CALL_RECORDING_SUMMARY,
+  CallRecordingTranscriptConfiguration:
+    WidgetConfigurationType.CALL_RECORDING_TRANSCRIPT,
+  ChatThreadsConfiguration: WidgetConfigurationType.CHAT_THREADS,
+  ChatConfiguration: WidgetConfigurationType.CHAT,
+  MessageCampaignBodyConfiguration:
+    WidgetConfigurationType.MESSAGE_CAMPAIGN_BODY,
+  MessageCampaignDetailsConfiguration:
+    WidgetConfigurationType.MESSAGE_CAMPAIGN_DETAILS,
+  EmailsConfiguration: WidgetConfigurationType.EMAILS,
+  FieldConfiguration: WidgetConfigurationType.FIELD,
+  FieldRichTextConfiguration: WidgetConfigurationType.FIELD_RICH_TEXT,
+  FieldsConfiguration: WidgetConfigurationType.FIELDS,
+  FormFieldConfiguration: WidgetConfigurationType.FORM_FIELD,
+  FilesConfiguration: WidgetConfigurationType.FILES,
+  IframeConfiguration: WidgetConfigurationType.IFRAME,
+  LineChartConfiguration: WidgetConfigurationType.LINE_CHART,
+  NotesConfiguration: WidgetConfigurationType.NOTES,
+  PieChartConfiguration: WidgetConfigurationType.PIE_CHART,
+  RecordTableConfiguration: WidgetConfigurationType.RECORD_TABLE,
+  StandaloneRichTextConfiguration: WidgetConfigurationType.STANDALONE_RICH_TEXT,
+  TasksConfiguration: WidgetConfigurationType.TASKS,
+  TimelineConfiguration: WidgetConfigurationType.TIMELINE,
+  ViewConfiguration: WidgetConfigurationType.VIEW,
+  WorkflowConfiguration: WidgetConfigurationType.WORKFLOW,
+  WorkflowRunConfiguration: WidgetConfigurationType.WORKFLOW_RUN,
+  WorkflowVersionConfiguration: WidgetConfigurationType.WORKFLOW_VERSION,
+};
+
 export const isWidgetConfigurationOfType = <
   T extends WidgetConfigurationTypename,
 >(
@@ -170,9 +212,25 @@ export const isWidgetConfigurationOfType = <
     | WidgetConfiguration
     | FieldsConfiguration
     | FieldConfiguration
+    | Record<string, unknown>
     | null
     | undefined,
   typename: T,
 ): configuration is WidgetConfigurationTypenameMap[T] => {
-  return configuration?.__typename === typename;
+  if (!configuration || typeof configuration !== 'object') {
+    return false;
+  }
+
+  if (isNonEmptyString(configuration.__typename)) {
+    return configuration.__typename === typename;
+  }
+
+  const expectedConfigurationType =
+    WIDGET_TYPENAME_TO_CONFIGURATION_TYPE_MAP[typename];
+
+  return (
+    isDefined(expectedConfigurationType) &&
+    'configurationType' in configuration &&
+    configuration.configurationType === expectedConfigurationType
+  );
 };
